@@ -63,7 +63,6 @@ class EditorPaneContainer extends React.Component {
           }}
         >
           <div style={this.props.cellsStyle} id="cells">
-
             {cellInputComponents}
           </div>
         </Resizable>
