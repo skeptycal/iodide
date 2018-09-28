@@ -5,6 +5,7 @@ from django.shortcuts import (get_object_or_404,
                               render)
 
 from .models import Notebook, NotebookRevision
+from ..files.models import File
 from ..base.models import User
 from ..views import get_user_info_dict
 
@@ -53,6 +54,14 @@ def notebook_revisions(request, pk):
         'title': nb.title,
         'notebookId': nb.id
     }
+    files = [
+        {'filename': file.filename, 
+        'id': file.id, 
+        'last_updated': file.last_updated.isoformat(sep=' '),
+        'size': len(file.content)}
+        for file in File.objects.filter(notebook_id=pk)
+    ]
+    print([len(file.content) for file in File.objects.filter(notebook_id=pk)])
     revisions = list(reversed([{
         'id': revision.id,
         'notebookId': revision.notebook_id,
@@ -64,6 +73,7 @@ def notebook_revisions(request, pk):
                 'userInfo': get_user_info_dict(request.user),
                 'ownerInfo': owner_info,
                 'revisions': revisions,
+                'files': files
             }
         }
     )
