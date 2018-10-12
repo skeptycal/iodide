@@ -11,9 +11,10 @@ django-environ = "*"
 "psycopg2-binary" = "*"
 furl = "*"
 django-rest-framework = "*"
+dockerflow = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"
 
 [dev-packages]
 "flake8" = "*"
