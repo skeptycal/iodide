@@ -9,6 +9,9 @@ const WriteFilePlugin = require('write-file-webpack-plugin')
 const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin')
 const UnusedWebpackPlugin = require('unused-webpack-plugin')
+
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
 const _ = require('lodash')
 
 const reduxLogMode = process.env.REDUX_LOGGING === 'VERBOSE' ? 'VERBOSE' : 'SILENT'
@@ -104,6 +107,7 @@ module.exports = (env) => {
     watchOptions: { poll: true },
     plugins: [
       ...plugins,
+      new BundleAnalyzerPlugin(),
       new CircularDependencyPlugin({
         // exclude detection of files based on a RegExp
         exclude: /a\.js|node_modules/,
