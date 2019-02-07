@@ -66,60 +66,30 @@ export function setConsoleLanguage(language) {
   };
 }
 
-export function changeConsoleElement({
-  historyType,
-  content,
-  historyId = historyIdGen.nextId(),
-  level,
-  language,
-  actionType = "ADD_TO_CONSOLE"
-}) {
-  let consoleContent;
-  EVALUATION_RESULTS[historyId] = content;
-
-  if (historyType === "CONSOLE_OUTPUT" || historyType === "FETCH_CELL_INFO") {
-    consoleContent = "";
-  } else {
-    consoleContent = content;
+export function changeConsoleElement(actionType = "ADD_TO_CONSOLE", args) {
+  // generate a historyId if one is not provided.
+  const historyId = args.historyId || historyIdGen.nextId();
+  let { value } = args;
+  if (value) {
+    EVALUATION_RESULTS[historyId] = value;
+    value = undefined;
   }
   const action = {
     type: actionType,
-    historyType,
-    content: consoleContent,
+    ...args,
     historyId,
-    level,
-    language,
+    value,
     lastRan: Date.now()
   };
-  if (actionType === "UPDATE_CONSOLE_ENTRY") delete action.historyType;
   return action;
 }
 
-export function addToConsole({
-  historyType,
-  content,
-  historyId,
-  level,
-  language
-}) {
-  return changeConsoleElement({
-    historyType,
-    content,
-    historyId,
-    level,
-    language,
-    actionType: "ADD_TO_CONSOLE"
-  });
+export function addToConsole(args) {
+  return changeConsoleElement("ADD_TO_CONSOLE", args);
 }
 
-export function updateConsoleEntry({ content, historyId, level, language }) {
-  return changeConsoleElement({
-    content,
-    historyId,
-    level,
-    language,
-    actionType: "UPDATE_CONSOLE_ENTRY"
-  });
+export function updateConsoleEntry(args) {
+  return changeConsoleElement("UPDATE_CONSOLE_ENTRY", args);
 }
 
 export function updateUserVariables() {
@@ -180,7 +150,7 @@ function evaluateCode(code, language, state, evalId) {
         dispatch(
           addToConsole({
             historyType: "CONSOLE_OUTPUT",
-            content: output,
+            value: output,
             level: "error"
           })
         );
@@ -188,7 +158,7 @@ function evaluateCode(code, language, state, evalId) {
         dispatch(
           addToConsole({
             historyType: "CONSOLE_OUTPUT",
-            content: output
+            value: output
           })
         );
       }
@@ -269,7 +239,7 @@ export function evaluateText(
       );
       dispatch(
         addToConsole({
-          content: new Error(`eval type ${evalType} is not defined`),
+          value: new Error(`eval type ${evalType} is not defined`),
           historyType: "CONSOLE_OUTPUT",
           level: "error"
         })

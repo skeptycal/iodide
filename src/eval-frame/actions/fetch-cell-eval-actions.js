@@ -117,7 +117,7 @@ export function evaluateFetchText(fetchText, evalId) {
         addToConsole({
           historyType: "FETCH_CELL_INFO",
           historyId: outputHistoryId,
-          content: syntaxErrors.map(fetchProgressInitialStrings),
+          value: syntaxErrors.map(fetchProgressInitialStrings),
           level: "error"
         })
       );
@@ -130,7 +130,7 @@ export function evaluateFetchText(fetchText, evalId) {
       addToConsole({
         historyType: "FETCH_CELL_INFO",
         historyId: outputHistoryId,
-        content: progressStrings
+        value: progressStrings
       })
     );
 
@@ -143,7 +143,7 @@ export function evaluateFetchText(fetchText, evalId) {
         dispatch(
           updateConsoleEntry({
             historyId: outputHistoryId,
-            content: progressStrings
+            value: progressStrings
           })
         );
         return outcome;
@@ -158,7 +158,7 @@ export function evaluateFetchText(fetchText, evalId) {
           dispatch(
             updateConsoleEntry({
               historyId: outputHistoryId,
-              content: outcomes,
+              value: outcomes,
               level: "error"
             })
           );

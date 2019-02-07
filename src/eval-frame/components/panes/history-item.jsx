@@ -21,31 +21,34 @@ export class HistoryItemUnconnected extends React.Component {
   };
 
   render() {
+    let out;
     switch (this.props.historyType) {
       case "CONSOLE_MESSAGE": {
         // CONSOLE_MESSAGEs are non eval input / output messages.
         // examples: implicit plugin load statuses / errors, eventually browser console
         // interception.
-        return (
+        out = (
           <ConsoleMessage level={this.props.level}>
             {this.props.content}
           </ConsoleMessage>
         );
+        break;
       }
       case "CONSOLE_INPUT": {
         // returns an input.
-        return (
+        out = (
           <EvalInput language={this.props.language}>
             {this.props.content}
           </EvalInput>
         );
+        break;
       }
       case "CONSOLE_OUTPUT":
       case "FETCH_CELL_INFO": {
         // returns an output associated with an input.
         // it uses the ConsoleMessage component, since it is stylistically
         // identical to these.
-        return (
+        out = (
           <ConsoleMessage level={this.props.level || "output"}>
             {this.props.historyType === "FETCH_CELL_INFO" ? (
               <PreformattedTextItemsHandler
@@ -56,17 +59,20 @@ export class HistoryItemUnconnected extends React.Component {
             )}
           </ConsoleMessage>
         );
+        break;
       }
       case "APP_MESSAGE": {
-        return <AppMessage messageType={this.props.content} />;
+        out = <AppMessage messageType={this.props.content} />;
+        break;
       }
       default:
-        return (
+        out = (
           <ConsoleMessage level="warn">
             Unknown history type {this.props.historyType}
           </ConsoleMessage>
         );
     }
+    return out;
   }
 }
 
