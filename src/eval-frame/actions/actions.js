@@ -4,8 +4,6 @@ import {
   sendStatusResponseToEditor
 } from "./editor-message-senders";
 
-const CodeMirror = require("codemirror"); // eslint-disable-line
-
 export function addToEvaluationQueue(chunk) {
   messagePasserEval.postMessage("ADD_TO_EVALUATION_QUEUE", chunk);
 }

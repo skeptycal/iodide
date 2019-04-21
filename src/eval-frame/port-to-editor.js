@@ -4,7 +4,6 @@ import { evaluateCode } from "./actions/actions";
 import { evaluateFetchText } from "./actions/fetch-cell-eval-actions";
 import { loadLanguagePlugin } from "./actions/language-actions";
 import { getUserDefinedVariablesFromWindow } from "./initialize-user-variables";
-import { getCompletions } from "./tools/notebook-utils";
 import {
   onParentContextFileFetchSuccess,
   onParentContextFileFetchError
@@ -66,15 +65,6 @@ async function receiveMessage(event) {
       }
       case "REQUESTED_FILE_ERROR": {
         onParentContextFileFetchError(message.reason, message.path);
-        break;
-      }
-      case "REQUEST_AUTOCOMPLETE_SUGGESTIONS": {
-        const { token, context, from, to } = message;
-        postMessageToEditor("AUTOCOMPLETION_SUGGESTIONS", {
-          list: getCompletions(token, context),
-          from,
-          to
-        });
         break;
       }
       case "EVAL_CODE": {

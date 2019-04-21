@@ -9,6 +9,7 @@ const WriteFilePlugin = require("write-file-webpack-plugin");
 const LodashModuleReplacementPlugin = require("lodash-webpack-plugin");
 const CircularDependencyPlugin = require("circular-dependency-plugin");
 const UnusedWebpackPlugin = require("unused-webpack-plugin");
+const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const _ = require("lodash");
 
 const MAX_CYCLES = 4;
@@ -144,6 +145,18 @@ module.exports = env => {
         root: __dirname
       }),
       new LodashModuleReplacementPlugin(),
+      new MonacoWebpackPlugin({
+        output: "monaco-assets",
+        languages: [
+          "css",
+          "html",
+          "javascript",
+          "json",
+          "markdown",
+          "python",
+          "typescript"
+        ]
+      }),
       new webpack.ProvidePlugin({
         React: "react",
         ReactDOM: "react-dom",
