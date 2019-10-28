@@ -4,11 +4,11 @@ import { connect } from "react-redux";
 
 import Modal from "@material-ui/core/Modal";
 
-import { setModalState } from "../../actions/actions";
+import { closeModals } from "../../actions/modal-actions";
 
 import HelpModal from "./help-modal";
 import HistoryModal from "./history-modal";
-import FileModal from "./file-modal";
+import FileModal from "./file-modal/file-modal";
 
 export class IodideModalRootUnconnected extends React.Component {
   static propTypes = {
@@ -51,11 +51,9 @@ export function mapStateToProps(state) {
   };
 }
 
-export function mapDispatchToProps(dispatch) {
-  return {
-    closeModals: () => dispatch(setModalState("MODALS_CLOSED"))
-  };
-}
+const mapDispatchToProps = {
+  closeModals
+};
 
 export default connect(
   mapStateToProps,

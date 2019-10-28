@@ -5,9 +5,6 @@ import { render } from "react-dom";
 // external styles
 import "font-awesome/css/font-awesome.css";
 import "opensans-npm-webfont/style.css";
-import "codemirror/theme/eclipse.css";
-import "codemirror/lib/codemirror.css";
-import "codemirror/addon/hint/show-hint.css";
 import "golden-layout/src/css/goldenlayout-base.css";
 import "golden-layout/src/css/goldenlayout-light-theme.css";
 
@@ -16,9 +13,10 @@ import "../shared/style/base";
 import "./style/top-level-container-styles.css";
 import "./style/side-panes.css";
 import "./style/menu-and-button-and-ui-styles.css";
-import "./style/codemirror-styles.css";
 import "./style/help-modal-styles.css";
 import "./style/golden-layout-style-overrides.css";
+import "./style/eval-container.css";
+import "./style/jupyter-rendered-html-styles.css";
 
 // theme settings
 import "./style/client-style-defaults";
@@ -30,23 +28,28 @@ import messagePasserEditor from "../shared/utils/redux-to-port-message-passer";
 import handleInitialIomd from "./initialization/handle-initial-iomd";
 import handleServerVariables from "./initialization/handle-server-variables";
 import handleReportViewModeInitialization from "./initialization/handle-report-view-mode-initialization";
-import { initializeDefaultKeybindings } from "./initialization/keybindings";
 
 import { listenForEvalFramePortReady } from "./port-to-eval-frame";
 
-import "./initialization/initialize-codemirror-loadmode";
-import "./initialization/initialize-dom";
+import { getFiles } from "./actions/file-actions";
+import { getFileSources } from "./actions/file-source-actions";
+
 import { restoreLocalAutosave } from "./actions/local-autosave-actions";
 import { handleEditorVisibilityChange } from "./actions/window-actions";
 import CSSCascadeProvider from "../shared/components/css-cascade-provider";
+import { initializeDefaultKeybindings } from "./initialization/keybindings";
+import { handleInterceptBackspace } from "../shared/intercept-keybindings";
 
 initializeDefaultKeybindings();
+handleInterceptBackspace();
 
 window.addEventListener("message", listenForEvalFramePortReady, false);
 
 handleServerVariables(store);
 handleInitialIomd(store);
 store.dispatch(restoreLocalAutosave());
+store.dispatch(getFiles());
+store.dispatch(getFileSources());
 handleReportViewModeInitialization(store);
 
 messagePasserEditor.connectDispatch(store.dispatch);

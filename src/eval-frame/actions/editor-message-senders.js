@@ -9,6 +9,17 @@ export function sendStatusResponseToEditor(status, evalId, payload) {
   });
 }
 
+export function sendResponseMessageToEditor(status, responseId, payload) {
+  if (typeof responseId !== "string") {
+    throw new TypeError("response messages must include a valid responseId");
+  }
+  messagePasserEval.postMessage("RESPONSE_MESSAGE", {
+    status,
+    responseId,
+    payload
+  });
+}
+
 export function sendActionToEditor(action) {
   messagePasserEval.postMessage("REDUX_ACTION", action);
 }
@@ -17,7 +28,7 @@ export function addConsoleEntryInEditor(historyItemAction) {
   const historyId = generateRandomId();
   messagePasserEval.postMessage("REDUX_ACTION", {
     historyId,
-    type: "ADD_TO_CONSOLE_HISTORY",
+    type: "console/history/ADD",
     ...historyItemAction
   });
   return historyId;
@@ -25,7 +36,7 @@ export function addConsoleEntryInEditor(historyItemAction) {
 
 export function updateConsoleEntryInEditor(historyItem) {
   messagePasserEval.postMessage("REDUX_ACTION", {
-    type: "UPDATE_VALUE_IN_HISTORY",
+    type: "console/history/UPDATE",
     historyItem
   });
 }

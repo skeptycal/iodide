@@ -5,12 +5,13 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template
 from django.urls import reverse
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ..base.models import User
 from ..files.models import File
-from ..settings import APP_VERSION_STRING, EVAL_FRAME_ORIGIN, MAX_FILE_SIZE, MAX_FILENAME_LENGTH
-from ..views import get_user_info_dict
+from ..settings import EVAL_FRAME_ORIGIN, MAX_FILE_SIZE, MAX_FILENAME_LENGTH, SITE_URL
+from ..views import get_base_page_info_dict, get_user_info_dict
 from .models import Notebook, NotebookRevision
 from .names import get_random_compound
 
@@ -21,10 +22,13 @@ def _get_user_info_json(user):
     return {}
 
 
+@xframe_options_exempt
+def eval_frame_view(request):
+    return render(request, "notebook_eval_frame.html", {"editor_origin": SITE_URL})
+
+
 def _get_iframe_src():
-    return urllib.parse.urljoin(
-        EVAL_FRAME_ORIGIN, "iodide.eval-frame.{}.html".format(APP_VERSION_STRING)
-    )
+    return urllib.parse.urljoin(EVAL_FRAME_ORIGIN, reverse(eval_frame_view))
 
 
 @ensure_csrf_cookie
@@ -41,10 +45,6 @@ def notebook_view(request, pk):
         revision = notebook.revisions.first()
         latest_revision_id = revision.id
 
-    files = [
-        {"filename": file.filename, "id": file.id, "lastUpdated": file.last_updated.isoformat()}
-        for file in File.objects.filter(notebook_id=pk).order_by("-last_updated")
-    ]
     notebook_info = {
         "username": notebook.owner.username,
         "user_can_save": notebook.owner_id == request.user.id,
@@ -53,7 +53,6 @@ def notebook_view(request, pk):
         "revision_is_latest": revision.id == latest_revision_id,
         "connectionMode": "SERVER",
         "title": revision.title,
-        "files": files,
         "max_filename_length": MAX_FILENAME_LENGTH,
         "max_file_size": MAX_FILE_SIZE,
     }
@@ -70,6 +69,7 @@ def notebook_view(request, pk):
             "notebook_info": notebook_info,
             "iomd": revision.content,
             "iframe_src": _get_iframe_src(),
+            "eval_frame_origin": EVAL_FRAME_ORIGIN,
         },
     )
 
@@ -118,6 +118,7 @@ def notebook_revisions(request, pk):
         {
             "title": f"Revisions - {nb.title}",
             "page_data": {
+                **get_base_page_info_dict(),
                 "userInfo": get_user_info_dict(request.user),
                 "ownerInfo": owner_info,
                 "revisions": revisions,
@@ -167,5 +168,6 @@ def tryit_view(request):
             },
             "iomd": new_notebook_content_template.render(),
             "iframe_src": _get_iframe_src(),
+            "eval_frame_origin": EVAL_FRAME_ORIGIN,
         },
     )

@@ -49,8 +49,6 @@ the following format:
 {
   "languageId": "jsx",
   "displayName": "React JSX",
-  "codeMirrorMode": "jsx",
-  "keybinding": "x",
   "url": "https://raw.githubusercontent.com/hamilton/iodide-jsx/master/docs/evaluate-jsx.js",
   "module": "jsx",
   "evaluator": "evaluateJSX",
@@ -64,10 +62,6 @@ The individual fields are described below:
 
 - `displayName`: A longer name used to identify the language in menus and other UX elements.
 
-- `codeMirrorMode`: The name of the CodeMirror plugin used to provide syntax highlighting for the language.  A list of the available plugin names is [here](https://github.com/codemirror/CodeMirror/tree/master/mode).
-
-- `keybinding`: The key used to select the language.  (TODO: Is this used anymore following the IOMD editing refactor?)
-
 - `url`: The URL to a JavaScript source file that defines the language support.  It is evaluated directly in the scope that runs Iodide user code, therefore it should should be "modularized" such that it only adds a single object to the global namespace.
 
 - `module`: The name of the module provided by the JavaScript file given by `url`.
@@ -77,3 +71,12 @@ The individual fields are described below:
 - `asyncEvaluator`: (optional) If evaluating code requires making asynchronous calls, for example, to load additional code from a remote location, an `asyncEvaluator` method should be provided.  It will take precedence over `evaluator` if provided.  It takes a string of source code, but returns a `Promise` that resolves to result value rather than returning the result immediately.  Otherwise, it follows the same conventions as `evaluator`.
 
 - `pluginType`: Must always be `language` for language plugins.  Other values are resolved for other plugin types to be defined in the future.
+
+If desired, you may also place the language plugin definition inside a json file and load it using a fetch cell as follows:
+
+```
+%% fetch
+plugin: https://example.com/plugin-definition.json
+```
+
+See the iomd documentation on [chunk types](../iomd/#iomd-chunk-types) for more details.

@@ -4,10 +4,12 @@ import thunk from "redux-thunk";
 import {
   addToEvalQueue,
   evaluateNotebook,
-  evalConsoleInput,
   evaluateText
 } from "../eval-actions";
+
+import { evalConsoleInput } from "../../console/input/thunks";
 import { NONCODE_EVAL_TYPES } from "../../state-schemas/state-schema";
+import { jsLanguageDefinition } from "../../state-schemas/language-definitions";
 
 const mockStore = configureMockStore([thunk]);
 
@@ -19,11 +21,12 @@ describe("evaluateNotebook", () => {
     store = undefined;
     testState = {
       iomdChunks: [
-        { id: 0, evalFlags: ["skipRunAll"] },
-        { id: 1, evalFlags: [] },
-        { id: 2, evalFlags: ["skipRunAll"] },
-        { id: 3, evalFlags: [] }
-      ]
+        { id: 0, evalFlags: ["skipRunAll"], chunkContent: "foo" },
+        { id: 1, evalFlags: [], chunkContent: "foo" },
+        { id: 2, evalFlags: ["skipRunAll"], chunkContent: "foo" },
+        { id: 3, evalFlags: [], chunkContent: "foo" }
+      ],
+      modalState: "MODALS_CLOSED"
     };
   });
 
@@ -42,26 +45,55 @@ describe("evaluateNotebook", () => {
 // ========================================================
 
 describe("addToEvalQueue", () => {
-  let dispatch;
+  let store;
+  let testState;
+  const modalState = "MODALS_CLOSED";
 
   beforeEach(() => {
-    dispatch = jest.fn();
+    store = undefined;
+    testState = { modalState };
   });
 
   // some random types that SHOULD be enqueued
   ["js", "py", "jl", "etc"].forEach(chunkType => {
-    const chunk = { chunkType };
+    const chunk = { chunkType, chunkContent: "foo" };
     it("dispatch if chunk of any type other than NONCODE_EVAL_TYPES", () => {
-      addToEvalQueue(chunk)(dispatch);
-      expect(dispatch).toBeCalledWith({ type: "ADD_TO_EVAL_QUEUE", chunk });
+      const expectedActions = [{ type: "ADD_TO_EVAL_QUEUE", chunk }];
+      store = mockStore(testState);
+      store.dispatch(addToEvalQueue(chunk));
+      expect(store.getActions()).toEqual(expectedActions);
     });
   });
 
   NONCODE_EVAL_TYPES.forEach(chunkType => {
-    const chunk = { chunkType };
+    const chunk = { chunkType, chunkContent: "foo" };
     it("DO NOT dispatch if chunk of any NONCODE_EVAL_TYPES", () => {
-      addToEvalQueue(chunk)(dispatch);
-      expect(dispatch).not.toBeCalled();
+      const expectedActions = [];
+      store = mockStore(testState);
+      store.dispatch(addToEvalQueue(chunk));
+      expect(store.getActions()).toEqual(expectedActions);
+    });
+  });
+
+  [
+    "",
+    `
+`,
+    "      ",
+    `  
+   
+`,
+    `
+
+
+`
+  ].forEach(chunkContent => {
+    const chunk = { chunkType: jsLanguageDefinition, chunkContent };
+    it("DO NOT dispatch if chunkContent is empty", () => {
+      const expectedActions = [];
+      store = mockStore(testState);
+      store.dispatch(addToEvalQueue(chunk));
+      expect(store.getActions()).toEqual(expectedActions);
     });
   });
 });
@@ -73,10 +105,11 @@ describe("evalConsoleInput", () => {
   let testState;
   let consoleText;
   const languageLastUsed = "js";
+  const modalState = "MODALS_CLOSED";
 
   beforeEach(() => {
     store = undefined;
-    testState = { languageLastUsed };
+    testState = { languageLastUsed, modalState };
   });
 
   it("if there is text in the console, eval", () => {
@@ -87,10 +120,8 @@ describe("evalConsoleInput", () => {
     };
 
     const expectedActions = [
-      { type: "CLEAR_CONSOLE_TEXT_CACHE" },
-      { type: "RESET_HISTORY_CURSOR" },
       { type: "ADD_TO_EVAL_QUEUE", chunk },
-      { type: "UPDATE_CONSOLE_TEXT", consoleText: "" }
+      { type: "console/input/RESET" }
     ];
     store = mockStore(testState);
     store.dispatch(evalConsoleInput(consoleText));
@@ -127,7 +158,8 @@ describe("evaluateText", () => {
         };
       }),
       editorSelections: [],
-      editorCursor: { line: 0, col: 0 }
+      editorCursor: { line: 1, col: 1 },
+      modalState: "MODALS_CLOSED"
     };
   });
 

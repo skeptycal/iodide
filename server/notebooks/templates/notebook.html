@@ -4,16 +4,21 @@
 <base target="_blank" rel="noopener noreferrer">
 {% endblock %}
 {% block content %}
-<script id="iomd" type="text/iomd">{{ iomd|safe }}</script>
+<div id="notebook-header"></div>
+<div id="editor-react-root"></div>
+<script id="iomd" type="text/iomd">{{ iomd|escape }}</script>
 <iframe
   id="eval-frame"
   src="{{ iframe_src|safe }}"
-  sandbox="allow-scripts allow-same-origin allow-popups"
+  sandbox="allow-scripts allow-same-origin allow-modals allow-popups"
   allowfullscreen="true"
   allowvr="yes"
   allow="microphone"
 ></iframe>
 {{ user_info|json_script:"userData" }}
 {{ notebook_info|json_script:"notebookInfo" }}
+<script>
+  window.evalFrameOrigin = "{{ eval_frame_origin }}";
+</script>
 <script src="/iodide.dev.js"></script>
 {% endblock %}

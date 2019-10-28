@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "react-emotion";
+import styled from "@emotion/styled";
 
 const elementColor = props => (props.fainter ? "gray" : "rgba(0,0,0,.6)");
 const color = props => (props.fainter ? "darkgray" : "rgba(0,0,0,.8)");
@@ -99,7 +99,7 @@ export default class OnboardingContent extends React.Component {
             <ElementTitle>Start with a Template</ElementTitle>
             <ElementBody>
               <ElementBlockLink href="https://iodide.io/tryit">
-                Javascript starter
+                JavaScript starter
               </ElementBlockLink>
               <ElementBlockLink href="https://iodide.io/notebooks/222/">
                 Pyodide starter

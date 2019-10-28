@@ -1,6 +1,7 @@
-import { getLocalAutosave } from "../tools/local-autosave";
+import { getLocalAutosave, clearLocalAutosave } from "../tools/local-autosave";
 import { getRevisionID } from "../tools/server-tools";
-import { updateIomdContent, updateNotebookInfo, updateTitle } from "./actions";
+import { updateNotebookInfo, updateTitle } from "./notebook-actions";
+import { updateIomdContent } from "./editor-actions";
 
 // Check to see if we have an autosaved revision available, if so
 // replace the notebook content with it
@@ -37,6 +38,9 @@ export function restoreLocalAutosave() {
             localAutosaveState.parentRevisionId === originalLoadedRevisionId
         })
       );
+    } else {
+      // the local autosave is either corrupt or not at all different from what we had, just delete it
+      await clearLocalAutosave(state);
     }
   };
 }

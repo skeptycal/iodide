@@ -3,7 +3,7 @@
 build:
 	npm install
 	npm run build
-	docker build -t app:build .
+	docker-compose build
 
 root-shell:
 	docker-compose run --rm -u 0 server bash
@@ -24,5 +24,4 @@ lintfix:
 	docker-compose run --rm server ./bin/lint-fix.sh
 
 test:
-	docker-compose run server ./manage.py collectstatic -c --no-input
-	docker-compose run server py.test
+	docker-compose run --rm server tests

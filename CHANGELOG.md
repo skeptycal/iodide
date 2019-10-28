@@ -1,8 +1,61 @@
 # (Unreleased; add upcoming change notes here)
 
+# 0.14.0 (2019-10-24)
+
+- Add test coverage reporting with Codecov. (#2322)
+- Fix use of naive datetime in favor of timezone-aware datetime objects. (#2323)
+- Collect email addresses from github logins (#2329)
+- Allow users to drop files onto the homepage to create a new notebook with
+  those files attached (#2133)
+- Add appropriate metadata so that Iodide links have a preview card when shared
+  on social media sites (#2344)
+- Ignore unknown properties for language plugins (fixes #2215)
+
+# 0.13.0 (2019-10-01)
+
+- Extend Python test harness to run linting and coverage as part of test suite (#2305)
+- Fix coloring of history modal's title (#2301)
+- Increase maximum length of file source URLs from 200 to 8192 (#2314)
+- Fix console warning by switching from react-helmet to react-helmet-async (#2315)
+
+# 0.12.0 (2019-09-25)
+
+- Fix spurious "unsaved changes" changeset in revision browser (#2259)
+- Adds a new feature, file sources, which allows notebook authors to schedule
+  the fetching of files from URLs. This feature is available in the notebook menu
+  (click _Menu > Manage Files_) (#1985)
+- Add multi stage docker builds for smaller docker images (#2156)
+- Fixed a bug where script tags aren't being rendered properly that could lead
+  to arbitrary code execution attacks (#2193)
+- Fixes warnings caused by outdated version of Emotion (#2244)
+
+# 0.11.0 (2019-08-21)
+
+- Removed iodide.environment API (#2038)
+- Add back local-only dev mode using command "npm run simple-serve" (#2024)
+- Iodide docker container no longer hardcodes server hostnames, can
+  reuse in multiple server environments (#1943)
+- Hide "unsaved changes" in revision browser if no unsaved changes (#2046)
+- Show revision, docs, contribute links even on non-public sites
+- Disable "History" menu item for the tryit notebook (#2125)
+- Add documentation for how the Iodide server's authentication system work (#2091)
+- Migrated to Monaco editor, providing several text editing improvements (find/replace text; autocomplete, including hits for Iodide custom chunk types; etc) (#2117)
+- Add "restore" functionality for revision browser (#2047)
+
+# 0.10.0 (2019-07-15)
+
+- Overhauls Iodide's data formatters to cover more data types, allow folding of long results, and many other enhancements
+- Deprecates the need for the `files/` prefix in fetch chunks.
+- Introduces the `plugin` fetch type in fetch chunks.
+- No longer swallowing errors in plugin loader code (fixes #2010)
+
+# 0.9.0 (2019-07-03)
+
 - Reduce the image size for small user icons, to improve loading times (fixes #1711)
 - Fix loading revision browser when authentication credentials are required
   for read-only API endpoints (partially fixes #1965)
+- Fix authentication hole in files api validation that would allow any logged-in
+  user to modify or create a file on another's behalf.
 
 # 0.8.0 (2019-06-18)
 

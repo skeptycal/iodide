@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "react-emotion";
+import styled from "@emotion/styled";
 // import MoreHoriz from '@material-ui/icons/MoreHoriz'
 
 import Header from "../components/header";
@@ -64,9 +64,15 @@ export const isLoggedIn = userInfo => "name" in userInfo;
 export default class UserPage extends React.Component {
   static propTypes = {
     thisUser: PropTypes.shape({
+      avatar: PropTypes.string,
+      full_name: PropTypes.string,
+      github_url: PropTypes.string,
       name: PropTypes.string
     }),
     userInfo: PropTypes.shape({
+      avatar: PropTypes.string,
+      full_name: PropTypes.string,
+      github_url: PropTypes.string,
       name: PropTypes.string
     }),
     notebookList: PropTypes.arrayOf(
@@ -76,15 +82,16 @@ export default class UserPage extends React.Component {
         latestRevision: PropTypes.string,
         last_revision: PropTypes.string
       })
-    )
+    ),
+    headerMessage: PropTypes.string
   };
   render() {
-    const { thisUser, userInfo, notebookList } = this.props;
+    const { thisUser, userInfo, notebookList, headerMessage } = this.props;
     const isUserAccount =
       isLoggedIn(userInfo) && thisUser.name === userInfo.name;
     return (
       <div>
-        <Header userInfo={userInfo} />
+        <Header userInfo={userInfo} headerMessage={headerMessage} />
         <PageBody>
           <BelowFoldContainer>
             <UserInformationContainer>

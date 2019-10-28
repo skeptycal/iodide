@@ -1,13 +1,13 @@
 import PropTypes from "prop-types";
 import React from "react";
-import styled from "react-emotion";
+import styled from "@emotion/styled";
 import { connect } from "react-redux";
 
 import { ModalContainer } from "./modal-container";
 import TitleBar from "./title-bar";
 import RevisionDiff from "./revision-diff";
 import RevisionList from "./revision-list";
-import { getNotebookRevisionList } from "../../actions/actions";
+import { getNotebookRevisionList } from "../../actions/history-modal-actions";
 
 const ModalContentContainer = styled("div")`
   display: grid;
@@ -52,14 +52,6 @@ class HistoryModalUnconnected extends React.Component {
   }
 }
 
-function mapDispatchToProps(dispatch) {
-  return {
-    getNotebookRevisionList: () => {
-      dispatch(getNotebookRevisionList());
-    }
-  };
-}
-
 export function mapStateToProps(state) {
   const notebookHistory = state.notebookHistory || {};
   const { errorGettingRevisionList, revisionListFetchStatus } = notebookHistory;
@@ -72,5 +64,5 @@ export function mapStateToProps(state) {
 
 export default connect(
   mapStateToProps,
-  mapDispatchToProps
+  { getNotebookRevisionList } // mapDispatchToProps shorthand
 )(HistoryModalUnconnected);

@@ -1,5 +1,6 @@
 import { newNotebook } from "../state-schemas/editor-state-prototypes";
 import { historyIdGen } from "../tools/id-generators";
+import { iomdParser } from "../iomd-tools/iomd-parser";
 
 function newAppMessage(
   appMessageId,
@@ -31,7 +32,6 @@ function addAppMessageToState(state, appMessage) {
 const initialVariables = new Set(Object.keys(window)); // gives all global variables
 initialVariables.add("__core-js_shared__");
 initialVariables.add("Mousetrap");
-initialVariables.add("CodeMirror");
 
 const notebookReducer = (state = newNotebook(), action) => {
   let nextState;
@@ -42,18 +42,10 @@ const notebookReducer = (state = newNotebook(), action) => {
     case "TOGGLE_WRAP_IN_EDITORS":
       return Object.assign({}, state, { wrapEditors: !state.wrapEditors });
 
-    case "REPLACE_NOTEBOOK_CONTENT": {
-      return Object.assign({}, state, {
-        iomd: action.iomd,
-        iomdChunks: action.iomdChunks,
-        title: action.title || state.title
-      });
-    }
-
     case "UPDATE_CURSOR": {
-      const { line, col, forceUpdate } = action;
+      const { line, col } = action;
       return Object.assign({}, state, {
-        editorCursor: { line, col, forceUpdate }
+        editorCursor: { line, col }
       });
     }
 
@@ -64,8 +56,8 @@ const notebookReducer = (state = newNotebook(), action) => {
     }
 
     case "UPDATE_IOMD_CONTENT": {
-      const { iomd, iomdChunks } = action;
-      return Object.assign({}, state, { iomd, iomdChunks });
+      const { iomd } = action;
+      return Object.assign({}, state, { iomd, iomdChunks: iomdParser(iomd) });
     }
 
     case "GETTING_NOTEBOOK_REVISION_LIST": {
@@ -77,11 +69,12 @@ const notebookReducer = (state = newNotebook(), action) => {
       });
     }
 
-    case "GOT_NOTEBOOK_REVISION_LIST": {
-      const { revisionList, selectedRevisionId } = action;
+    case "UPDATE_NOTEBOOK_HISTORY": {
+      const { hasLocalOnlyChanges, revisionList, selectedRevisionId } = action;
       return Object.assign({}, state, {
         notebookHistory: {
           ...(state.notebookHistory || {}),
+          hasLocalOnlyChanges,
           revisionList,
           revisionListFetchStatus: "IDLE",
           selectedRevisionId
@@ -158,6 +151,12 @@ const notebookReducer = (state = newNotebook(), action) => {
       return Object.assign({}, state, { viewMode });
     }
 
+    case "UPDATE_FILES_FROM_SERVER": {
+      const { files } = action;
+      const notebookInfo = { ...state.notebookInfo, files };
+      return { ...state, notebookInfo };
+    }
+
     case "ADD_FILE_TO_NOTEBOOK": {
       const { filename, lastUpdated, fileID } = action;
       const files = state.notebookInfo.files.map(f => Object.assign({}, f));
@@ -219,25 +218,8 @@ const notebookReducer = (state = newNotebook(), action) => {
       return addAppMessageToState(nextState, Object.assign({}, action.message));
     }
 
-    case "ENVIRONMENT_UPDATE_FROM_EVAL_FRAME": {
-      let newSavedEnvironment;
-      if (action.update) {
-        newSavedEnvironment = Object.assign(
-          {},
-          state.savedEnvironment,
-          action.updateObj
-        );
-      } else {
-        newSavedEnvironment = action.updateObj;
-      }
-      return Object.assign({}, state, {
-        savedEnvironment: newSavedEnvironment
-      });
-    }
-
     case "ADD_LANGUAGE_TO_EDITOR": {
       const { languageDefinition } = action;
-      languageDefinition.codeMirrorModeLoaded = false;
       const loadedLanguages = Object.assign({}, state.loadedLanguages, {
         [languageDefinition.languageId]: languageDefinition
       });
@@ -245,18 +227,6 @@ const notebookReducer = (state = newNotebook(), action) => {
         [languageDefinition.languageId]: languageDefinition
       });
       return Object.assign({}, state, { loadedLanguages, languageDefinitions });
-    }
-
-    case "CODEMIRROR_MODE_READY": {
-      const { codeMirrorMode } = action;
-      const loadedLanguages = Object.assign({}, state.loadedLanguages);
-      // set all languages with correct codeMirrorMode to have codeMirrorModeLoaded===true
-      Object.keys(loadedLanguages).forEach(langKey => {
-        if (loadedLanguages[langKey].codeMirrorMode === codeMirrorMode) {
-          loadedLanguages[langKey].codeMirrorModeLoaded = true;
-        }
-      });
-      return Object.assign({}, state, { loadedLanguages });
     }
 
     case "UPDATE_PANE_POSITIONS": {

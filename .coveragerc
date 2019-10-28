@@ -1,0 +1,15 @@
+[run]
+source = server
+branch = True
+data_file = /app/.coverage/data
+
+[report]
+show_missing = True
+omit =
+    tests/*
+    *migrations*
+    *management*
+    *management/commands*
+
+[xml]
+output = /app/.coverage/coverage.xml

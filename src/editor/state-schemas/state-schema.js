@@ -1,7 +1,9 @@
 import { languageDefinitions } from "./language-definitions";
-import { historySchema } from "./history-schema";
+import { historySchema } from "../console/history/state-schema";
+import { consoleInputSchema } from "../console/input/state-schema";
 
-export const NONCODE_EVAL_TYPES = ["css", "md", "meta", "raw"];
+// FIXME: break out enums to be in a separate file.
+export const NONCODE_EVAL_TYPES = ["css", "md", "raw"];
 export const RUNNABLE_CHUNK_TYPES = ["plugin", "fetch"];
 export const FETCH_CHUNK_TYPES = [
   "css",
@@ -9,9 +11,44 @@ export const FETCH_CHUNK_TYPES = [
   "text",
   "blob",
   "json",
-  "arrayBuffer"
+  "arrayBuffer",
+  "plugin"
 ];
+
 export const IODIDE_API_LOAD_TYPES = ["text", "blob", "json", "arrayBuffer"];
+export const FILE_SOURCE_INPUT_STATUS_TYPES = [
+  "NONE",
+  "LOADING",
+  "SUCCESS",
+  "ERROR"
+];
+
+export const FILE_SOURCE_UPDATE_INTERVAL_MAP = {
+  "never updates": null,
+  "updates daily": "1 day, 0:00:00",
+  "updates weekly": "7 days, 0:00:00"
+};
+
+export const FILE_SOURCE_UPDATE_SELECTOR_OPTIONS = [
+  { label: "never", key: "never updates" },
+  { label: "daily", key: "updates daily" },
+  { label: "weekly", key: "updates weekly" }
+];
+
+export const reverseFileSourceUpdateInterval = v => {
+  if (v === null) return "never updates";
+  if (v === "604800.0") return "updates weekly";
+  return "updates daily";
+};
+export const FILE_SOURCE_UPDATE_INTERVALS = Object.keys(
+  FILE_SOURCE_UPDATE_INTERVAL_MAP
+);
+export const FILE_UPDATE_OPERATION_STATUSES = [
+  "pending",
+  "running",
+  "completed",
+  "failed"
+];
 
 const appMessageSchema = {
   type: "object",
@@ -30,15 +67,12 @@ export const languageSchema = {
     pluginType: { type: "string", enum: ["language"] },
     languageId: { type: "string" },
     displayName: { type: "string" },
-    codeMirrorMode: { type: "string" },
-    codeMirrorModeLoaded: { type: "boolean" },
-    keybinding: { type: "string" },
     module: { type: "string" },
     evaluator: { type: "string" },
     asyncEvaluator: { type: "string" },
     url: { type: "string" }
   },
-  additionalProperties: false
+  additionalProperties: true
 };
 
 export const fileSchema = {
@@ -51,12 +85,27 @@ export const fileSchema = {
   additionalProperties: false
 };
 
-const environmentVariableSchema = {
-  type: "array",
-  items: [
-    { type: "string", enum: ["object", "string", "rawString"] },
-    { type: "string" }
-  ]
+export const fileUpdateOperationSchema = {
+  type: ["object", "null"],
+  properties: {
+    id: { type: "integer" },
+    scheduled_at: { type: ["string", "null"] },
+    started_at: { type: ["string", "null"] },
+    ended_at: { type: ["string", "null"] },
+    status: { type: ["string", "null"] },
+    failure_reason: { type: ["string", "null"] }
+  }
+};
+
+export const fileSourceSchema = {
+  type: "object",
+  properties: {
+    id: { type: "integer" },
+    url: { type: ["string", "null"] },
+    filename: { type: "string" },
+    update_interval: { type: ["string", "null"] },
+    latest_file_update_operation: fileUpdateOperationSchema
+  }
 };
 
 const panePositionSchema = {
@@ -94,31 +143,15 @@ export const stateProperties = {
     items: appMessageSchema,
     default: []
   },
-  consoleText: {
-    type: "string",
-    default: ""
-  },
-  consoleTextCache: {
-    // stores the current entry when keying up/down
-    type: "string",
-    default: ""
-  },
-  consoleScrollbackPosition: {
-    // the position from the END of the history when keying up/down in the console
-    type: "integer",
-    default: 0
-  },
+  consoleInput: consoleInputSchema,
   editorCursor: {
     type: "object",
     properties: {
       line: { type: "integer" },
-      col: { type: "integer" },
-      // if forceUpdate is true when the editor recieves it as props,
-      // then the editor must reposition the cursor using internal editor APIs
-      forceUpdate: { type: "boolean" }
+      col: { type: "integer" }
     },
     additionalProperties: false,
-    default: { line: 0, col: 0, forceUpdate: false }
+    default: { line: 1, col: 1 }
   },
   editorSelections: {
     type: "array",
@@ -143,11 +176,7 @@ export const stateProperties = {
     type: "boolean",
     default: false
   },
-  history: {
-    type: "array",
-    items: historySchema,
-    default: []
-  },
+  history: historySchema,
   iomd: {
     type: "string",
     default: ""
@@ -221,6 +250,10 @@ export const stateProperties = {
   notebookHistory: {
     type: "object",
     properties: {
+      hasLocalOnlyChanges: {
+        type: "boolean",
+        default: false
+      },
       revisionContentFetchStatus: {
         type: "string",
         enum: ["FETCHING", "ERROR", "IDLE"],
@@ -243,7 +276,7 @@ export const stateProperties = {
         },
         default: []
       },
-      selectedRevision: {
+      selectedRevisionId: {
         type: "number"
       },
       revisionContent: {
@@ -252,6 +285,39 @@ export const stateProperties = {
         default: {}
       }
     }
+  },
+  fileSources: {
+    type: "object",
+    properties: {
+      sources: { type: "array", items: fileSourceSchema },
+      statusMessage: { type: "string" },
+      statusType: {
+        type: "string",
+        enum: FILE_SOURCE_INPUT_STATUS_TYPES
+      },
+      statusIsVisible: {
+        type: "boolean"
+      },
+      url: { type: "string" },
+      filename: { type: "string" },
+      updateInterval: {
+        type: "string",
+        enum: FILE_SOURCE_UPDATE_SELECTOR_OPTIONS.map(f => f.key)
+      },
+      confirmDeleteID: { type: "number" },
+      isDeletingAnimationID: { type: "number" }
+    },
+    default: {
+      sources: [],
+      statusMessage: "",
+      statusType: "NONE",
+      url: "",
+      filename: "",
+      updateInterval: FILE_SOURCE_UPDATE_SELECTOR_OPTIONS[0].key,
+      confirmDeleteID: undefined,
+      isDeletingAnimationID: undefined
+    },
+    additionalProperties: false
   },
   notebookInfo: {
     type: "object",
@@ -278,7 +344,8 @@ export const stateProperties = {
       user_can_save: false,
       connectionMode: "STANDALONE",
       serverSaveStatus: "OK",
-      files: []
+      files: [],
+      fileSources: []
     }
   },
   panePositions: {
@@ -290,11 +357,6 @@ export const stateProperties = {
       ConsolePositioner: Object.assign({}, positionerDefaults),
       WorkspacePositioner: Object.assign({}, positionerDefaults)
     }
-  },
-  savedEnvironment: {
-    type: "object",
-    additionalProperties: environmentVariableSchema,
-    default: {}
   },
   title: {
     type: "string",

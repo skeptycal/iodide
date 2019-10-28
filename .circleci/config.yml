@@ -34,7 +34,8 @@ jobs:
       - *save_javascript_cache
       - run: npm run lint
       - run: npm run build
-      - run: npm run test -- --runInBand
+      - run: npm run test-coverage -- --runInBand
+      - run: bash <(curl -s https://codecov.io/bash) -f .coverage/coverage-final.json -Z
 
   build:
     docker:
@@ -49,31 +50,46 @@ jobs:
       - run: npm install
       - *save_javascript_cache
       - run: npm run build
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - setup_remote_docker
+# temporarily disabling docker layer caching, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1589709
+#      - setup_remote_docker:
+#          # docker_layer_caching: true
       - run:
-          name: Build Docker image
-          command: docker build -t app:build .
+          name: Create version.json
+          command: |
+            printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' \
+            "$CIRCLE_SHA1" \
+            "$CIRCLE_TAG" \
+            "$CIRCLE_PROJECT_USERNAME" \
+            "$CIRCLE_PROJECT_REPONAME" \
+            "$CIRCLE_BUILD_URL" > version.json
+      - run:
+          name: Build Docker images
+          command: docker build -t app:prod --target=base . && docker build -t app:build .
       # save the built docker container into CircleCI's cache. This is
       # required since Workflows do not have the same remote docker instance.
       - run:
-          name: docker save app:build
-          command: mkdir -p /tmp; docker save -o /tmp/docker.tar "app:build"
+          name: Save built images
+          command: mkdir -p /tmp; docker save -o /tmp/docker.tar "app:build"; docker save -o /tmp/docker-prod.tar "app:prod"
       - save_cache:
           key: v1-{{ .Branch }}-{{epoch}}
           paths:
             - /tmp/docker.tar
+            - /tmp/docker-prod.tar
             - Dockerfile
             - docker-compose.yml
 
   docs:
     docker:
-      - image: circleci/python:3.7
+      - image: circleci/python:3.8
     steps:
       - checkout
       - run:
           name: Install dependencies
-          command: sudo pip install mkdocs markdown-include
+          command: |
+            sudo pip install mkdocs markdown-include bs4
+            # version on pypi is out of date and incompatible with python 3, see https://github.com/pugong/mkdocs-mermaid-plugin/issues/5
+            sudo pip install git+https://github.com/pugong/mkdocs-mermaid-plugin@abf14392b0ed0c7022210b32c4e7c9c3e4c5c68a#egg=mkdocs-mermaid-plugin
       - run:
           name: Build docs
           command: mkdocs build
@@ -102,6 +118,13 @@ jobs:
           command: docker load -i /tmp/docker.tar
 
       - run:
+          name: Install Docker Compose
+          command: |
+            curl -L https://github.com/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+
+      - run:
           name: Lint code
           command: |
             cp .env-dist .env
@@ -110,6 +133,7 @@ jobs:
       - run:
           name: Test Code
           command: |
+            set -x
             cp .env-dist .env
             # we need to wait for the db to come up
             docker-compose up -d
@@ -117,46 +141,32 @@ jobs:
             # we need to re-collect static as docker-compose mounts the checkout directory over what we have in the image
             chmod 777 . # make sure we have permission to write the files in our volume
             # run the actual tests
-            make test
+            docker-compose run --rm server ci
+            bash <(curl -s https://codecov.io/bash) -f .coverage/coverage.xml -Z
 
   deploy:
     docker:
       - image: circleci/node:8
     working_directory: ~/iodide
-    environment:
-      npm_config_cache: ~/cache/npm
     steps:
-      - checkout
-      - run: rm -rf node_modules/*/.git
-      - run: npm install
-      - run: npm run build
       - setup_remote_docker
+      - restore_cache:
+          key: v1-{{.Branch}}
       - run:
-          name: Create version.json
-          command: |
-            printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' \
-            "$CIRCLE_SHA1" \
-            "$CIRCLE_TAG" \
-            "$CIRCLE_PROJECT_USERNAME" \
-            "$CIRCLE_PROJECT_REPONAME" \
-            "$CIRCLE_BUILD_URL" > version.json
-      # We are not using the cached docker file here b/c we want the production
-      # build to use only the required Python files.
-      - run:
-          name: Build Docker image
-          command: docker build -t app:build --build-arg PIP_FILE=build.txt .
+          name: Load Production Image
+          command: docker load -i /tmp/docker-prod.tar
       - run:
           name: Push image to Docker Hub
           command: |
             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
             # deploy master
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              docker tag app:build ${DOCKERHUB_REPO}:latest
+              docker tag app:prod ${DOCKERHUB_REPO}:latest
               docker push ${DOCKERHUB_REPO}:latest
             elif [ ! -z "${CIRCLE_TAG}" ]; then
             # deploy a release tag...
               echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
-              docker tag app:build "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+              docker tag app:prod "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
               docker images
               docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
             fi

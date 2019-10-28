@@ -1,12 +1,12 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "react-emotion";
-import Helmet from "react-helmet";
+import styled from "@emotion/styled";
+import { Helmet, HelmetProvider } from "react-helmet-async";
 
 import { connect } from "react-redux";
 
-import { updateTitle } from "../../actions/actions";
 import { updateAutosave } from "../../actions/autosave-actions";
+import { updateTitle } from "../../actions/notebook-actions";
 
 const TitleContainer = styled("div")``;
 
@@ -37,7 +37,9 @@ export class TitleUnconnected extends React.Component {
   render() {
     const elem = (
       <TitleContainer>
-        <Helmet title={this.props.pageTitle} />
+        <HelmetProvider>
+          <Helmet title={this.props.pageTitle} />
+        </HelmetProvider>
         <InputElement
           titleColor={this.props.titleColor}
           value={this.props.notebookTitle}

@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "react-emotion";
+import styled from "@emotion/styled";
 import Settings from "@material-ui/icons/Settings";
 import MoreHoriz from "@material-ui/icons/MoreHoriz";
 import format from "date-fns/format";
@@ -25,7 +25,7 @@ import {
   ListDate,
   ListMetadata,
   ListSmallLink
-} from "../components/list";
+} from "../../shared/components/list";
 
 const RevisionsPageHeader = styled("h2")`
   span {
@@ -87,6 +87,7 @@ export default class RevisionsPage extends React.Component {
     userInfo: PropTypes.shape({
       name: PropTypes.string
     }),
+    headerMessage: PropTypes.string,
     ownerInfo: PropTypes.shape({
       notebookId: PropTypes.number,
       forkedFromRevisionID: PropTypes.number,
@@ -150,7 +151,10 @@ export default class RevisionsPage extends React.Component {
     const forkedFrom = Boolean(this.props.ownerInfo.forkedFromRevisionID);
     return (
       <div>
-        <Header userInfo={this.props.userInfo} />
+        <Header
+          userInfo={this.props.userInfo}
+          headerMessage={this.props.headerMessage}
+        />
         <PageBody>
           <BelowFoldContainer>
             <RevisionsPageHeader>

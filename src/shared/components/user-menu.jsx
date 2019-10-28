@@ -1,9 +1,7 @@
-/* global USE_OPENIDC_AUTH */
-
 import React from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
-import styled from "react-emotion";
+import styled from "@emotion/styled";
 import Avatar from "@material-ui/core/Avatar";
 import ExpandMore from "@material-ui/icons/ExpandMore";
 
@@ -109,7 +107,7 @@ export default class UserMenu extends React.Component {
                   <MenuItem onClick={this.goToProfile}>Your Profile</MenuItem>
                   <MenuDivider />
                   <MenuItem onClick={this.goToDocs}>Docs</MenuItem>
-                  {!USE_OPENIDC_AUTH && (
+                  {!process.env.USE_OPENIDC_AUTH && (
                     <MenuItem onClick={this.logout}>Log Out</MenuItem>
                   )}
                 </Menu>

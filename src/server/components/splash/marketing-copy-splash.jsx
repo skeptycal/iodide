@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import styled from "react-emotion";
+import styled from "@emotion/styled";
 
 import {
   OutlineButton,
@@ -103,9 +103,8 @@ export default class MarketingCopySplash extends React.Component {
           </SplashTitle>
         </SingleSplash>
         <SplashCopy>
-          {
-            "Create, share, collaborate, and reproduce powerful reports and visualizations with tools you already know. "
-          }
+          Create, share, collaborate, and reproduce powerful reports and
+          visualizations with tools you already know.
         </SplashCopy>
         <ButtonGroup>
           <ContainedButton onClick={this.showLoginModal}>
@@ -125,11 +124,11 @@ export default class MarketingCopySplash extends React.Component {
               Bring the power of the web to your data analysis.
             </PointTitle>
             Directly import and utilize the best-in-class visualization and UI
-            tools in Javascript.
+            tools in JavaScript.
           </Point>
           <Point>
             <PointTitle>
-              Combine Python, Javascript, Markdown, and CSS.
+              Combine Python, JavaScript, Markdown, and CSS.
             </PointTitle>
             Choose the right language for the task with zero additional
             installation.

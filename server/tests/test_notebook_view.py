@@ -2,10 +2,12 @@ import random
 
 import pytest
 from django.urls import reverse
+from django.utils.html import escape
 
-from helpers import get_script_block, get_script_block_json, get_title_block
 from server.notebooks.models import Notebook, NotebookRevision
 from server.settings import MAX_FILE_SIZE, MAX_FILENAME_LENGTH
+
+from .helpers import get_script_block, get_script_block_json, get_title_block
 
 
 def test_notebook_view(client, test_notebook):
@@ -19,7 +21,6 @@ def test_notebook_view(client, test_notebook):
     assert expected_content in str(resp.content)
     assert get_script_block_json(resp.content, "notebookInfo") == {
         "connectionMode": "SERVER",
-        "files": [],
         "forked_from": False,
         "notebook_id": test_notebook.id,
         "revision_id": initial_revision.id,
@@ -45,6 +46,16 @@ def test_notebook_view(client, test_notebook):
     assert new_expected_content in str(resp.content)
 
 
+def test_notebook_view_escapes_iomd(client, fake_user):
+    notebook = Notebook.objects.create(owner=fake_user, title="Fake notebook")
+    iomd_content = "</script><script>alert('31337')"
+    NotebookRevision.objects.create(notebook=notebook, title="First revision", content=iomd_content)
+
+    resp = client.get(reverse("notebook-view", args=[str(notebook.id)]))
+    expected_content = '<script id="iomd" type="text/iomd">{}</script>'.format(escape(iomd_content))
+    assert expected_content in str(resp.content)
+
+
 def test_notebook_view_old_revision(client, test_notebook):
     initial_revision = NotebookRevision.objects.filter(notebook=test_notebook).last()
     new_revision_content = "My new fun content"
@@ -56,11 +67,9 @@ def test_notebook_view_old_revision(client, test_notebook):
     )
     assert resp.status_code == 200
     assert get_title_block(resp.content) == initial_revision.title
-    print(str(resp.content))
     assert get_script_block(resp.content, "iomd", "text/iomd") == initial_revision.content
     assert get_script_block_json(resp.content, "notebookInfo") == {
         "connectionMode": "SERVER",
-        "files": [],
         "forked_from": False,
         "notebook_id": test_notebook.id,
         "revision_id": initial_revision.id,
@@ -140,3 +149,10 @@ def test_notebook_revisions_page(fake_user, test_notebook, client):
         ],
         "userInfo": {},
     }
+
+
+def test_eval_frame_view(client):
+    uri = reverse("eval-frame-view")
+    resp = client.get(uri)
+    assert resp.status_code == 200
+    assert '<div id="eval-container"></div>' in str(resp.content)
